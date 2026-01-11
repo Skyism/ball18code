@@ -81,6 +81,19 @@ def main():
                 # Calculate Euclidean distance between landmarks 13 and 14
                 distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
 
+                # Calculate face width using landmarks 234 (left face boundary) and 454 (right face boundary)
+                landmark_234 = face_landmarks[234]
+                landmark_454 = face_landmarks[454]
+
+                # Convert normalized coordinates to pixel coordinates
+                x_234 = int(landmark_234.x * frame_width)
+                y_234 = int(landmark_234.y * frame_height)
+                x_454 = int(landmark_454.x * frame_width)
+                y_454 = int(landmark_454.y * frame_height)
+
+                # Calculate face width in pixels
+                face_width_px = np.sqrt((x_454 - x_234)**2 + (y_454 - y_234)**2)
+
                 # Determine mouth state based on threshold
                 mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
 
