@@ -7,6 +7,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+# Mouth open threshold in pixels
+MOUTH_OPEN_THRESHOLD = 20
+
 def main():
     # Initialize MediaPipe Face Landmarker
     base_options = mp.tasks.BaseOptions(model_asset_path='face_landmarker.task')
@@ -77,6 +80,9 @@ def main():
 
                 # Calculate Euclidean distance between landmarks 13 and 14
                 distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
+
+                # Determine mouth state based on threshold
+                mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
 
                 # Display distance on frame
                 cv2.putText(frame, f'Distance: {distance:.0f} px', (10, 30),
