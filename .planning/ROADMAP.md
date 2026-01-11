@@ -1,0 +1,70 @@
+# Roadmap: Real-Time Mouth Detection System
+
+## Overview
+
+This roadmap takes us from initial Python environment setup through to a production-ready mouth detection system optimized for Raspberry Pi deployment. We start by establishing the foundation with OpenCV webcam integration, then layer in MediaPipe Face Mesh for landmark detection, implement the core mouth state detection logic, and finally optimize performance for embedded ARM hardware.
+
+## Domain Expertise
+
+None
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Foundation Setup** - Environment, dependencies, and basic webcam feed
+- [ ] **Phase 2: Face Mesh Integration** - MediaPipe landmark detection and visualization
+- [ ] **Phase 3: Mouth Detection Logic** - Distance calculation and threshold-based state detection
+- [ ] **Phase 4: Raspberry Pi Optimization** - Performance tuning for ARM deployment
+
+## Phase Details
+
+### Phase 1: Foundation Setup
+**Goal**: Establish Python environment with required dependencies and verify basic webcam capture and display functionality
+**Depends on**: Nothing (first phase)
+**Research**: Unlikely (standard Python setup, established libraries)
+**Plans**: TBD
+
+Plans: (To be determined during phase planning)
+
+### Phase 2: Face Mesh Integration
+**Goal**: Integrate MediaPipe Face Mesh model to detect facial landmarks in real-time and visualize specific lip landmarks (13 and 14) on the video feed
+**Depends on**: Phase 1
+**Research**: Likely (MediaPipe Face Mesh landmark indices, API usage patterns)
+**Research topics**: MediaPipe Face Mesh landmark mapping (specifically landmarks 13 & 14), initialization parameters, performance settings for real-time processing
+**Plans**: TBD
+
+Plans: (To be determined during phase planning)
+
+### Phase 3: Mouth Detection Logic
+**Goal**: Implement Euclidean distance calculation between lip landmarks and threshold-based mouth state detection with clear visual feedback
+**Depends on**: Phase 2
+**Research**: Unlikely (mathematical distance calculation, threshold tuning is experimental)
+**Plans**: TBD
+
+Plans: (To be determined during phase planning)
+
+### Phase 4: Raspberry Pi Optimization
+**Goal**: Optimize code for ARM architecture and resource-constrained environments to ensure smooth real-time performance on Raspberry Pi
+**Depends on**: Phase 3
+**Research**: Likely (ARM-specific optimizations, resource constraints)
+**Research topics**: MediaPipe on Raspberry Pi (ARM compatibility and installation), OpenCV performance tuning for ARM, camera interface compatibility, frame rate optimization strategies
+**Plans**: TBD
+
+Plans: (To be determined during phase planning)
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation Setup | 0/? | Not started | - |
+| 2. Face Mesh Integration | 0/? | Not started | - |
+| 3. Mouth Detection Logic | 0/? | Not started | - |
+| 4. Raspberry Pi Optimization | 0/? | Not started | - |
