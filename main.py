@@ -75,6 +75,13 @@ def main():
                 x_14 = int(landmark_14.x * frame_width)
                 y_14 = int(landmark_14.y * frame_height)
 
+                # Calculate Euclidean distance between landmarks 13 and 14
+                distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
+
+                # Display distance on frame
+                cv2.putText(frame, f'Distance: {distance:.0f} px', (10, 30),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
                 # Draw green circles at landmark positions
                 cv2.circle(frame, (x_13, y_13), 5, (0, 255, 0), -1)
                 cv2.circle(frame, (x_14, y_14), 5, (0, 255, 0), -1)
