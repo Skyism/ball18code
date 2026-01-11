@@ -84,13 +84,20 @@ def main():
                 # Determine mouth state based on threshold
                 mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
 
+                # Set color based on state: green for CLOSED, red for OPEN
+                state_color = (0, 255, 0) if mouth_state == "CLOSED" else (0, 0, 255)
+
                 # Display distance on frame
                 cv2.putText(frame, f'Distance: {distance:.0f} px', (10, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                # Draw green circles at landmark positions
-                cv2.circle(frame, (x_13, y_13), 5, (0, 255, 0), -1)
-                cv2.circle(frame, (x_14, y_14), 5, (0, 255, 0), -1)
+                # Display mouth state with color-coding
+                cv2.putText(frame, f'State: {mouth_state}', (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2)
+
+                # Draw circles at landmark positions with state color
+                cv2.circle(frame, (x_13, y_13), 5, state_color, -1)
+                cv2.circle(frame, (x_14, y_14), 5, state_color, -1)
 
                 # Add labels next to landmarks
                 cv2.putText(frame, '13', (x_13 + 10, y_13), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
