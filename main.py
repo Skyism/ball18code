@@ -37,6 +37,7 @@ def main():
     # Create Face Landmarker instance
     with mp.tasks.vision.FaceLandmarker.create_from_options(options) as face_landmarker:
         # Main loop - capture and display frames
+        frame_timestamp_ms = 0
         while True:
             # Read frame from webcam
             ret, frame = cap.read()
@@ -45,6 +46,16 @@ def main():
             if not ret:
                 print("Error: Failed to read frame from webcam")
                 break
+
+            # Convert frame from BGR to RGB for MediaPipe processing
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Create MediaPipe Image from RGB frame
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+            # Process the frame with Face Landmarker
+            face_landmarker_result = face_landmarker.detect_for_video(mp_image, frame_timestamp_ms)
+            frame_timestamp_ms += 33  # Approximate 30fps (33ms per frame)
 
             # Display the frame in a window
             cv2.imshow('Mouth Detection', frame)
