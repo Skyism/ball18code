@@ -108,6 +108,25 @@ def main():
                 cv2.putText(frame, f'State: {mouth_state}', (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2)
 
+                # Display face width metric
+                cv2.putText(frame, f'Face Width: {face_width_px:.0f} px', (10, 90),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+                # Determine distance indicator based on face width thresholds
+                if face_width_px > 250:
+                    distance_indicator = "CLOSE"
+                    distance_color = (0, 0, 255)  # Red for suboptimal
+                elif face_width_px >= 150:
+                    distance_indicator = "OK"
+                    distance_color = (0, 255, 0)  # Green for optimal
+                else:
+                    distance_indicator = "FAR"
+                    distance_color = (0, 0, 255)  # Red for suboptimal
+
+                # Display distance indicator with color coding
+                cv2.putText(frame, f'Distance: {distance_indicator}', (10, 120),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
+
                 # Draw circles at landmark positions with state color
                 cv2.circle(frame, (x_13, y_13), 5, state_color, -1)
                 cv2.circle(frame, (x_14, y_14), 5, state_color, -1)
