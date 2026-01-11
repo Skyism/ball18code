@@ -57,6 +57,32 @@ def main():
             face_landmarker_result = face_landmarker.detect_for_video(mp_image, frame_timestamp_ms)
             frame_timestamp_ms += 33  # Approximate 30fps (33ms per frame)
 
+            # Draw landmarks 13 and 14 if face is detected
+            if face_landmarker_result.face_landmarks:
+                # Get frame dimensions
+                frame_height, frame_width = frame.shape[:2]
+
+                # Get the first face's landmarks
+                face_landmarks = face_landmarker_result.face_landmarks[0]
+
+                # Extract landmarks 13 and 14 (lip landmarks)
+                landmark_13 = face_landmarks[13]
+                landmark_14 = face_landmarks[14]
+
+                # Convert normalized coordinates to pixel coordinates
+                x_13 = int(landmark_13.x * frame_width)
+                y_13 = int(landmark_13.y * frame_height)
+                x_14 = int(landmark_14.x * frame_width)
+                y_14 = int(landmark_14.y * frame_height)
+
+                # Draw green circles at landmark positions
+                cv2.circle(frame, (x_13, y_13), 5, (0, 255, 0), -1)
+                cv2.circle(frame, (x_14, y_14), 5, (0, 255, 0), -1)
+
+                # Add labels next to landmarks
+                cv2.putText(frame, '13', (x_13 + 10, y_13), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(frame, '14', (x_14 + 10, y_14), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
             # Display the frame in a window
             cv2.imshow('Mouth Detection', frame)
 
