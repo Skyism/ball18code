@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-11)
 
 **Core value:** Detection accuracy — correctly identifying mouth open/closed states with minimal false positives
-**Current focus:** Phase 2 — Face Mesh Integration
+**Current focus:** Phase 3 — Mouth Detection Logic
 
 ## Current Position
 
-Phase: 2 of 4 (Face Mesh Integration)
+Phase: 3 of 4 (Mouth Detection Logic)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-01-11 — Completed 02-01-PLAN.md
+Last activity: 2026-01-11 — Completed 03-01-PLAN.md
 
-Progress: ████░░░░░░ 50%
+Progress: ███████░░░ 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 7 min
-- Total execution time: 0.23 hours
+- Total plans completed: 3
+- Average duration: 5 min
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: ████░░░░░░ 50%
 |-------|-------|-------|----------|
 | 01-foundation-setup | 1 | 7 min | 7 min |
 | 02-face-mesh-integration | 1 | 7 min | 7 min |
+| 03-mouth-detection-logic | 1 | 1 min | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 7, 7 min
-- Trend: Consistent velocity
+- Last 5 plans: 7, 7, 1 min
+- Trend: Accelerating (Phase 3 was straightforward implementation)
 
 ## Accumulated Context
 
@@ -46,6 +47,8 @@ Recent decisions affecting current work:
 | 01 | Use opencv-python instead of opencv-contrib-python | Avoid unnecessary modules for lean Raspberry Pi deployment |
 | 01 | Specify mediapipe>=0.10.0 | Ensure Face Mesh API compatibility for Phase 2 |
 | 02 | Use MediaPipe FaceLandmarker API (new v0.10.31) instead of legacy solutions API | Installed MediaPipe version uses new tasks-based architecture requiring explicit model download |
+| 03 | Use absolute pixel distance (20px threshold) instead of normalized coordinates | Absolute pixel distance provides more reliable detection across different face sizes in frame |
+| 03 | Implement dual visual feedback: text labels + colored landmark circles | Text provides explicit state while colored circles offer immediate visual confirmation |
 
 ### Deferred Issues
 
@@ -57,6 +60,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-11 22:30
-Stopped at: Completed 02-01-PLAN.md (Phase 2 complete)
+Last session: 2026-01-11 22:25
+Stopped at: Completed 03-01-PLAN.md (Phase 3 complete)
 Resume file: None
