@@ -20,6 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Face Mesh Integration** - MediaPipe landmark detection and visualization (Completed 2026-01-11)
 - [x] **Phase 3: Mouth Detection Logic** - Distance calculation and threshold-based state detection (Completed 2026-01-11)
 - [ ] **Phase 4: Raspberry Pi Optimization** - Performance tuning for ARM deployment
+- [x] **Phase 5: Describe Distance Face Away From Camera** - Display face distance from camera for calibration and debugging (Completed 2026-01-11)
 
 ## Phase Details
 
@@ -63,10 +64,20 @@ Plans:
 
 Plans: (To be determined during phase planning)
 
+### Phase 5: Describe Distance Face Away From Camera
+**Goal**: Display face distance from camera for calibration and debugging
+**Depends on**: Phase 3
+**Research**: Unlikely (extending existing landmark measurement patterns)
+**Status**: Complete
+**Completed**: 2026-01-11
+
+Plans:
+- [x] 05-01: Face width calculation and distance indicator with threshold-based feedback - 1 min
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -74,3 +85,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Face Mesh Integration | 1/1 | Complete | 2026-01-11 |
 | 3. Mouth Detection Logic | 1/1 | Complete | 2026-01-11 |
 | 4. Raspberry Pi Optimization | 0/? | Not started | - |
+| 5. Describe Distance Face Away From Camera | 1/1 | Complete | 2026-01-11 |
