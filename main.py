@@ -144,11 +144,15 @@ def main():
                         distance_color = (0, 165, 255)  # Orange
                     
                     # Display calculated distance in inches
-                    cv2.putText(frame, f'Distance: {distance_inches:.1f} inches ({distance_indicator})', 
+                    cv2.putText(frame, f'Distance: {distance_inches:.1f} inches ({distance_indicator})',
                                (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
                 else:
                     cv2.putText(frame, 'Distance: N/A', (10, 120),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+                # Display normalized mouth coordinates
+                cv2.putText(frame, f'Mouth: X={mouthX:.2f} Y={mouthY:.2f}', (10, 150),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                 # Draw circles at landmark positions with state color
                 cv2.circle(frame, (x_13, y_13), 5, state_color, -1)
