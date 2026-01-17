@@ -6,6 +6,7 @@ Displays live video feed from default webcam with keyboard quit functionality.
 import cv2
 import mediapipe as mp
 import numpy as np
+import serial
 
 # Mouth open threshold in pixels
 MOUTH_OPEN_THRESHOLD = 20
@@ -14,6 +15,10 @@ MOUTH_OPEN_THRESHOLD = 20
 KNOWN_FACE_WIDTH_CM = 12  # Average face width in cm
 FOCAL_LENGTH_PX = 673  # Focal length in pixels (calibrated at 12 inches)
 CALIBRATION_DISTANCE_INCHES = 12  # Distance used for calibration
+
+# Serial communication constants
+SERIAL_PORT = '/dev/ttyUSB0'  # Default serial port (adjust for your system)
+BAUD_RATE = 9600  # Standard baud rate for Arduino
 
 def main():
     # Initialize MediaPipe Face Landmarker
@@ -41,6 +46,19 @@ def main():
 
     print("Webcam opened successfully")
     print("Press 'q' to quit")
+
+    # Initialize serial connection (optional feature)
+    ser = None
+    try:
+        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+        print(f"Serial connection established on {SERIAL_PORT}")
+    except serial.SerialException as e:
+        print(f"Warning: Could not open serial port {SERIAL_PORT}")
+        print(f"  Error: {e}")
+        print("  Common port names to try:")
+        print("    Linux/Mac: /dev/ttyUSB0, /dev/ttyACM0, /dev/ttyUSB1")
+        print("    Windows: COM3, COM4, COM5")
+        print("  Continuing without serial output...")
 
     # Create Face Landmarker instance
     with mp.tasks.vision.FaceLandmarker.create_from_options(options) as face_landmarker:
