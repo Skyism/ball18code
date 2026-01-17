@@ -1,15 +1,15 @@
 """
 Basic webcam capture script for mouth detection system.
+Uses OpenCV Haar Cascade classifiers for face and mouth detection.
 Displays live video feed from default webcam with keyboard quit functionality.
 """
 
 import cv2
-import mediapipe as mp
 import numpy as np
 import serial
 
-# Mouth open threshold in pixels
-MOUTH_OPEN_THRESHOLD = 20
+# Mouth open threshold - aspect ratio threshold
+MOUTH_ASPECT_RATIO_THRESHOLD = 0.6  # ratio > 0.6 means mouth is open
 
 # Distance calculation constants (calibrated values)
 KNOWN_FACE_WIDTH_CM = 12  # Average face width in cm
@@ -21,16 +21,20 @@ SERIAL_PORT = '/dev/ttyUSB0'  # Default serial port (adjust for your system)
 BAUD_RATE = 115200  # Standard baud rate for Arduino
 
 def main():
-    # Initialize MediaPipe Face Landmarker
-    base_options = mp.tasks.BaseOptions(model_asset_path='face_landmarker.task')
-    options = mp.tasks.vision.FaceLandmarkerOptions(
-        base_options=base_options,
-        running_mode=mp.tasks.vision.RunningMode.VIDEO,  # Video stream mode for lower latency
-        num_faces=1,  # Single face detection
-        min_face_detection_confidence=0.5,
-        min_face_presence_confidence=0.5,
-        min_tracking_confidence=0.5
-    )
+    # Load Haar Cascade classifiers (these ship with OpenCV)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    # Try multiple mouth cascade options
+    mouth_cascade_path = cv2.data.haarcascades + 'haarcascade_mcs_mouth.xml'
+    mouth_cascade = cv2.CascadeClassifier(mouth_cascade_path)
+
+    # Verify classifiers loaded successfully
+    if face_cascade.empty():
+        print("Error: Could not load face cascade classifier")
+        return
+    if mouth_cascade.empty():
+        print("Error: Could not load mouth cascade classifier")
+        return
 
     # Initialize video capture from default webcam (index 0)
     cap = cv2.VideoCapture(0)
@@ -60,50 +64,75 @@ def main():
         print("    Windows: COM3, COM4, COM5")
         print("  Continuing without serial output...")
 
-    # Create Face Landmarker instance
-    with mp.tasks.vision.FaceLandmarker.create_from_options(options) as face_landmarker:
-        # Main loop - capture and display frames
-        frame_timestamp_ms = 0
-        while True:
-            # Read frame from webcam
-            ret, frame = cap.read()
+    # Main loop - capture and display frames
+    while True:
+        # Read frame from webcam
+        ret, frame = cap.read()
 
-            # Check if frame was read successfully
-            if not ret:
-                print("Error: Failed to read frame from webcam")
-                break
+        # Check if frame was read successfully
+        if not ret:
+            print("Error: Failed to read frame from webcam")
+            break
 
-            # Convert frame from BGR to RGB for MediaPipe processing
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Get frame dimensions
+        frame_height, frame_width = frame.shape[:2]
 
-            # Create MediaPipe Image from RGB frame
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        # Convert to grayscale for Haar Cascade detection
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Process the frame with Face Landmarker
-            face_landmarker_result = face_landmarker.detect_for_video(mp_image, frame_timestamp_ms)
-            frame_timestamp_ms += 33  # Approximate 30fps (33ms per frame)
+        # Detect faces
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-            # Draw landmarks 13 and 14 if face is detected
-            if face_landmarker_result.face_landmarks:
-                # Get frame dimensions
-                frame_height, frame_width = frame.shape[:2]
+        # Process first detected face
+        if len(faces) > 0:
+            # Get the first face
+            (x, y, w, h) = faces[0]
 
-                # Get the first face's landmarks
-                face_landmarks = face_landmarker_result.face_landmarks[0]
+            # Calculate face width in pixels (using bounding box width)
+            face_width_px = w
 
-                # Extract landmarks 13 and 14 (lip landmarks)
-                landmark_13 = face_landmarks[13]
-                landmark_14 = face_landmarks[14]
+            # Draw rectangle around face
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-                # Convert normalized coordinates to pixel coordinates
-                x_13 = int(landmark_13.x * frame_width)
-                y_13 = int(landmark_13.y * frame_height)
-                x_14 = int(landmark_14.x * frame_width)
-                y_14 = int(landmark_14.y * frame_height)
+            # Define mouth region of interest (ROI) - lower half of face
+            mouth_roi_y = y + int(h * 0.5)  # Start from middle of face
+            mouth_roi_h = int(h * 0.5)      # Lower half of face
+            mouth_roi = gray[mouth_roi_y:mouth_roi_y+mouth_roi_h, x:x+w]
 
-                # Calculate mouth center coordinates (average of landmarks 13 and 14)
-                mouthX_px = (x_13 + x_14) / 2
-                mouthY_px = (y_13 + y_14) / 2
+            # Detect mouth in the ROI
+            mouths = mouth_cascade.detectMultiScale(mouth_roi, scaleFactor=1.1, minNeighbors=15, minSize=(20, 20))
+
+            # Initialize mouth state and coordinates
+            mouth_state = "CLOSED"
+            mouthX = 0.0
+            mouthY = 0.0
+            state_color = (0, 255, 0)  # Green for CLOSED
+
+            if len(mouths) > 0:
+                # Get the first detected mouth
+                (mx, my, mw, mh) = mouths[0]
+
+                # Adjust coordinates to full frame (add ROI offset)
+                mx_full = x + mx
+                my_full = mouth_roi_y + my
+
+                # Calculate mouth aspect ratio (height / width)
+                mouth_aspect_ratio = mh / mw if mw > 0 else 0
+
+                # Determine mouth state based on aspect ratio
+                if mouth_aspect_ratio > MOUTH_ASPECT_RATIO_THRESHOLD:
+                    mouth_state = "OPEN"
+                    state_color = (0, 0, 255)  # Red for OPEN
+                else:
+                    mouth_state = "CLOSED"
+                    state_color = (0, 255, 0)  # Green for CLOSED
+
+                # Draw rectangle around mouth
+                cv2.rectangle(frame, (mx_full, my_full), (mx_full+mw, my_full+mh), state_color, 2)
+
+                # Calculate mouth center coordinates
+                mouthX_px = mx_full + mw / 2
+                mouthY_px = my_full + mh / 2
 
                 # Normalize coordinates to [-1, 1] range with screen center at (0, 0)
                 screen_center_x = frame_width / 2
@@ -111,97 +140,74 @@ def main():
                 mouthX = (mouthX_px - screen_center_x) / screen_center_x
                 mouthY = (mouthY_px - screen_center_y) / screen_center_y
 
-                # Calculate Euclidean distance between landmarks 13 and 14
-                distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
+                # Draw circle at mouth center
+                cv2.circle(frame, (int(mouthX_px), int(mouthY_px)), 5, state_color, -1)
 
-                # Calculate face width using landmarks 234 (left face boundary) and 454 (right face boundary)
-                landmark_234 = face_landmarks[234]
-                landmark_454 = face_landmarks[454]
+            # Send mouth state over serial if connection is active
+            if ser is not None:
+                try:
+                    # Send format: isMouthOpen:OPEN;dx:0.12;dy:-0.34\n
+                    message = f'isMouthOpen:{mouth_state};dx:{mouthX:.2f};dy:{mouthY:.2f}\n'
+                    ser.write(message.encode('utf-8'))
+                except serial.SerialException as e:
+                    print(f"Warning: Serial write failed - {e}")
+                    print("  Disabling serial output...")
+                    ser = None
 
-                # Convert normalized coordinates to pixel coordinates
-                x_234 = int(landmark_234.x * frame_width)
-                y_234 = int(landmark_234.y * frame_height)
-                x_454 = int(landmark_454.x * frame_width)
-                y_454 = int(landmark_454.y * frame_height)
+            # Display mouth state with color-coding
+            cv2.putText(frame, f'State: {mouth_state}', (10, 30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2)
 
-                # Calculate face width in pixels
-                face_width_px = np.sqrt((x_454 - x_234)**2 + (y_454 - y_234)**2)
+            # Display face width metric
+            cv2.putText(frame, f'Face Width: {face_width_px:.0f} px', (10, 60),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                # Determine mouth state based on threshold
-                mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
+            # Calculate actual distance from camera using pinhole camera model
+            # Formula: distance = (known_width × focal_length) / perceived_width
+            if face_width_px > 0:  # Avoid division by zero
+                distance_inches = (FOCAL_LENGTH_PX * CALIBRATION_DISTANCE_INCHES) / face_width_px
 
-                # Send mouth state over serial if connection is active
-                if ser is not None:
-                    try:
-                        #send format: isMouthOpen:True;dx:5;dy:10\n
-                        ser.write(b'isMouthOpen:' + str(mouth_state) + ';dx:' + str(mouthX) + ';dy:' + str(mouthY) + '\n')
-                    except serial.SerialException as e:
-                        print(f"Warning: Serial write failed - {e}")
-                        print("  Disabling serial output...")
-                        ser = None
-
-                # Set color based on state: green for CLOSED, red for OPEN
-                state_color = (0, 255, 0) if mouth_state == "CLOSED" else (0, 0, 255)
-
-                # Display distance on frame
-                cv2.putText(frame, f'Distance: {distance:.0f} px', (10, 30),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-                # Display mouth state with color-coding
-                cv2.putText(frame, f'State: {mouth_state}', (10, 60),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, state_color, 2)
-
-                # Display face width metric
-                cv2.putText(frame, f'Face Width: {face_width_px:.0f} px', (10, 90),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-                # Calculate actual distance from camera using pinhole camera model
-                # Formula: distance = (known_width × focal_length) / perceived_width
-                if face_width_px > 0:  # Avoid division by zero
-                    distance_inches = (FOCAL_LENGTH_PX * CALIBRATION_DISTANCE_INCHES) / face_width_px
-                    
-                    # Determine distance indicator based on calculated distance
-                    if distance_inches < 10:
-                        distance_indicator = "TOO CLOSE"
-                        distance_color = (0, 0, 255)  # Red
-                    elif distance_inches <= 15:
-                        distance_indicator = "OPTIMAL"
-                        distance_color = (0, 255, 0)  # Green
-                    else:
-                        distance_indicator = "TOO FAR"
-                        distance_color = (0, 165, 255)  # Orange
-                    
-                    # Display calculated distance in inches
-                    cv2.putText(frame, f'Distance: {distance_inches:.1f} inches ({distance_indicator})',
-                               (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
+                # Determine distance indicator based on calculated distance
+                if distance_inches < 10:
+                    distance_indicator = "TOO CLOSE"
+                    distance_color = (0, 0, 255)  # Red
+                elif distance_inches <= 15:
+                    distance_indicator = "OPTIMAL"
+                    distance_color = (0, 255, 0)  # Green
                 else:
-                    cv2.putText(frame, 'Distance: N/A', (10, 120),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    distance_indicator = "TOO FAR"
+                    distance_color = (0, 165, 255)  # Orange
 
-                # Display normalized mouth coordinates
-                cv2.putText(frame, f'Mouth: X={mouthX:.2f} Y={mouthY:.2f}', (10, 150),
+                # Display calculated distance in inches
+                cv2.putText(frame, f'Distance: {distance_inches:.1f} inches ({distance_indicator})',
+                           (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
+            else:
+                cv2.putText(frame, 'Distance: N/A', (10, 90),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                # Draw circles at landmark positions with state color
-                cv2.circle(frame, (x_13, y_13), 5, state_color, -1)
-                cv2.circle(frame, (x_14, y_14), 5, state_color, -1)
+            # Display normalized mouth coordinates
+            cv2.putText(frame, f'Mouth: X={mouthX:.2f} Y={mouthY:.2f}', (10, 120),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                # Add labels next to landmarks
-                cv2.putText(frame, '13', (x_13 + 10, y_13), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-                cv2.putText(frame, '14', (x_14 + 10, y_14), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        else:
+            # No face detected
+            cv2.putText(frame, 'No face detected', (10, 30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-            # Display the frame in a window
-            cv2.imshow('Mouth Detection', frame)
+        # Display the frame in a window
+        cv2.imshow('Mouth Detection', frame)
 
-            # Wait for 'q' key press (1ms delay)
-            # The & 0xFF mask ensures compatibility across platforms
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                print("Quit signal received")
-                break
+        # Wait for 'q' key press (1ms delay)
+        # The & 0xFF mask ensures compatibility across platforms
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Quit signal received")
+            break
 
     # Cleanup: release camera and close all windows
     cap.release()
     cv2.destroyAllWindows()
+    if ser is not None:
+        ser.close()
     print("Cleanup complete")
 
 if __name__ == "__main__":
