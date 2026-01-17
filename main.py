@@ -1,15 +1,17 @@
 """
 Basic webcam capture script for mouth detection system.
-Uses OpenCV Haar Cascade for face detection and region-based analysis for mouth state.
+Uses OpenCV Haar Cascade for face detection and intensity-based analysis for mouth state.
 Displays live video feed from default webcam with keyboard quit functionality.
 """
 
 import cv2
 import numpy as np
 import serial
+from collections import deque
 
-# Mouth open threshold - vertical mouth region height in pixels
-MOUTH_HEIGHT_THRESHOLD = 25  # Height threshold for detecting open mouth
+# Mouth detection parameters
+MOUTH_OPEN_INTENSITY_THRESHOLD = 80  # Average intensity threshold (darker = more open)
+SMOOTHING_WINDOW = 5  # Number of frames to average for stability
 
 # Distance calculation constants (calibrated values)
 KNOWN_FACE_WIDTH_CM = 12  # Average face width in cm
@@ -20,39 +22,57 @@ CALIBRATION_DISTANCE_INCHES = 12  # Distance used for calibration
 SERIAL_PORT = '/dev/ttyUSB0'  # Default serial port (adjust for your system)
 BAUD_RATE = 115200  # Standard baud rate for Arduino
 
-def detect_mouth_region(gray_roi, frame_roi):
+def detect_mouth_state(gray_roi):
     """
-    Detect mouth state by analyzing the mouth region of interest.
-    Uses edge detection and contour analysis to determine if mouth is open.
+    Detect mouth state by analyzing pixel intensity in the mouth region.
+    Open mouth appears darker due to the visible oral cavity.
 
-    Returns: (is_open, mouth_height, mouth_center_x, mouth_center_y, mouth_width)
+    Returns: (average_intensity, is_open_raw)
     """
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray_roi, (7, 7), 0)
+    if gray_roi.size == 0:
+        return 255, False  # Bright = closed
 
-    # Apply edge detection
-    edges = cv2.Canny(blurred, 30, 100)
+    # Apply slight blur to reduce noise
+    blurred = cv2.GaussianBlur(gray_roi, (5, 5), 0)
 
-    # Find contours in the mouth region
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Focus on central region (avoid edges which may be skin)
+    h, w = blurred.shape
+    central_h = int(h * 0.6)
+    central_w = int(w * 0.6)
+    offset_y = int(h * 0.2)
+    offset_x = int(w * 0.2)
 
-    if len(contours) == 0:
-        # No mouth detected, return closed state with defaults
-        h, w = gray_roi.shape
-        return False, 0, w // 2, h // 2, w
+    central_region = blurred[offset_y:offset_y+central_h, offset_x:offset_x+central_w]
 
-    # Find the largest contour (likely the mouth)
-    largest_contour = max(contours, key=cv2.contourArea)
-    x, y, w, h = cv2.boundingRect(largest_contour)
+    if central_region.size == 0:
+        return 255, False
 
-    # Calculate mouth center
-    mouth_center_x = x + w // 2
-    mouth_center_y = y + h // 2
+    # Calculate average intensity (lower = darker = more open)
+    avg_intensity = np.mean(central_region)
 
-    # Determine if mouth is open based on contour height
-    is_open = h > MOUTH_HEIGHT_THRESHOLD
+    # Open mouth is darker (lower intensity)
+    is_open = avg_intensity < MOUTH_OPEN_INTENSITY_THRESHOLD
 
-    return is_open, h, mouth_center_x, mouth_center_y, w
+    return avg_intensity, is_open
+
+class MouthStateSmoothing:
+    """Temporal smoothing to reduce flickering"""
+    def __init__(self, window_size=SMOOTHING_WINDOW):
+        self.window_size = window_size
+        self.state_buffer = deque(maxlen=window_size)
+        self.intensity_buffer = deque(maxlen=window_size)
+
+    def update(self, is_open, intensity):
+        """Add new state and return smoothed result"""
+        self.state_buffer.append(1 if is_open else 0)
+        self.intensity_buffer.append(intensity)
+
+        # Return majority vote
+        avg_state = sum(self.state_buffer) / len(self.state_buffer)
+        avg_intensity = sum(self.intensity_buffer) / len(self.intensity_buffer)
+
+        # Use hysteresis: require 60% threshold to change state
+        return avg_state > 0.6, avg_intensity
 
 def main():
     # Load Haar Cascade classifier for face detection
@@ -91,6 +111,9 @@ def main():
         print("    Windows: COM3, COM4, COM5")
         print("  Continuing without serial output...")
 
+    # Initialize smoothing filter
+    smoother = MouthStateSmoothing()
+
     # Main loop - capture and display frames
     while True:
         # Read frame from webcam
@@ -121,22 +144,24 @@ def main():
             # Draw rectangle around face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-            # Define mouth region of interest (ROI) - lower third of face
-            mouth_roi_y = y + int(h * 0.6)  # Start at 60% down the face
-            mouth_roi_h = int(h * 0.35)      # Take 35% of face height
-            mouth_roi_x = x + int(w * 0.2)   # Inset from sides
-            mouth_roi_w = int(w * 0.6)       # Center 60% of face width
+            # Define mouth region of interest (ROI) - lower portion of face
+            mouth_roi_y = y + int(h * 0.65)  # Start at 65% down the face
+            mouth_roi_h = int(h * 0.25)      # Take 25% of face height
+            mouth_roi_x = x + int(w * 0.25)  # Inset from sides
+            mouth_roi_w = int(w * 0.5)       # Center 50% of face width
 
-            # Extract mouth ROI from grayscale and color frames
+            # Extract mouth ROI from grayscale frame
             gray_mouth_roi = gray[mouth_roi_y:mouth_roi_y+mouth_roi_h, mouth_roi_x:mouth_roi_x+mouth_roi_w]
-            frame_mouth_roi = frame[mouth_roi_y:mouth_roi_y+mouth_roi_h, mouth_roi_x:mouth_roi_x+mouth_roi_w]
 
-            # Detect mouth state
-            is_mouth_open, mouth_h, rel_mx, rel_my, mouth_w = detect_mouth_region(gray_mouth_roi, frame_mouth_roi)
+            # Detect mouth state using intensity analysis
+            avg_intensity, is_open_raw = detect_mouth_state(gray_mouth_roi)
 
-            # Calculate mouth center in full frame coordinates
-            mouthX_px = mouth_roi_x + rel_mx
-            mouthY_px = mouth_roi_y + rel_my
+            # Apply temporal smoothing
+            is_mouth_open, smoothed_intensity = smoother.update(is_open_raw, avg_intensity)
+
+            # Calculate mouth center (center of ROI)
+            mouthX_px = mouth_roi_x + mouth_roi_w / 2
+            mouthY_px = mouth_roi_y + mouth_roi_h / 2
 
             # Determine mouth state
             mouth_state = "OPEN" if is_mouth_open else "CLOSED"
@@ -202,8 +227,8 @@ def main():
             cv2.putText(frame, f'Mouth: X={mouthX:.2f} Y={mouthY:.2f}', (10, 120),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-            # Display mouth height for debugging
-            cv2.putText(frame, f'Mouth Height: {mouth_h:.0f} px', (10, 150),
+            # Display intensity for debugging (lower = darker = more open)
+            cv2.putText(frame, f'Intensity: {smoothed_intensity:.1f}', (10, 150),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         else:
