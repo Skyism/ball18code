@@ -10,7 +10,8 @@ import serial
 from collections import deque
 
 # Mouth detection parameters
-MOUTH_OPEN_INTENSITY_THRESHOLD = 120  # Average intensity threshold (darker = more open)
+DARK_PIXEL_THRESHOLD = 70  # Pixels darker than this are considered "dark"
+DARK_PIXEL_RATIO_THRESHOLD = 0.15  # Ratio of dark pixels indicating open mouth
 SMOOTHING_WINDOW = 5  # Number of frames to average for stability
 
 # Distance calculation constants (calibrated values)
@@ -24,13 +25,13 @@ BAUD_RATE = 115200  # Standard baud rate for Arduino
 
 def detect_mouth_state(gray_roi):
     """
-    Detect mouth state by analyzing pixel intensity in the mouth region.
-    Open mouth appears darker due to the visible oral cavity.
+    Detect mouth state by analyzing dark pixel ratio in the mouth region.
+    Open mouth has more dark pixels due to the visible oral cavity.
 
-    Returns: (average_intensity, is_open_raw)
+    Returns: (dark_pixel_ratio, is_open_raw)
     """
     if gray_roi.size == 0:
-        return 255, False  # Bright = closed
+        return 0.0, False  # No dark pixels = closed
 
     # Apply slight blur to reduce noise
     blurred = cv2.GaussianBlur(gray_roi, (5, 5), 0)
@@ -45,34 +46,38 @@ def detect_mouth_state(gray_roi):
     central_region = blurred[offset_y:offset_y+central_h, offset_x:offset_x+central_w]
 
     if central_region.size == 0:
-        return 255, False
+        return 0.0, False
 
-    # Calculate average intensity (lower = darker = more open)
-    avg_intensity = np.mean(central_region)
+    # Count pixels darker than threshold
+    dark_pixels = np.sum(central_region < DARK_PIXEL_THRESHOLD)
+    total_pixels = central_region.size
 
-    # Open mouth is darker (lower intensity)
-    is_open = avg_intensity < MOUTH_OPEN_INTENSITY_THRESHOLD
+    # Calculate ratio of dark pixels
+    dark_ratio = dark_pixels / total_pixels if total_pixels > 0 else 0.0
 
-    return avg_intensity, is_open
+    # Open mouth has more dark pixels (oral cavity visible)
+    is_open = dark_ratio > DARK_PIXEL_RATIO_THRESHOLD
+
+    return dark_ratio, is_open
 
 class MouthStateSmoothing:
     """Temporal smoothing to reduce flickering"""
     def __init__(self, window_size=SMOOTHING_WINDOW):
         self.window_size = window_size
         self.state_buffer = deque(maxlen=window_size)
-        self.intensity_buffer = deque(maxlen=window_size)
+        self.ratio_buffer = deque(maxlen=window_size)
 
-    def update(self, is_open, intensity):
+    def update(self, is_open, ratio):
         """Add new state and return smoothed result"""
         self.state_buffer.append(1 if is_open else 0)
-        self.intensity_buffer.append(intensity)
+        self.ratio_buffer.append(ratio)
 
         # Return majority vote
         avg_state = sum(self.state_buffer) / len(self.state_buffer)
-        avg_intensity = sum(self.intensity_buffer) / len(self.intensity_buffer)
+        avg_ratio = sum(self.ratio_buffer) / len(self.ratio_buffer)
 
         # Use hysteresis: require 60% threshold to change state
-        return avg_state > 0.6, avg_intensity
+        return avg_state > 0.6, avg_ratio
 
 def main():
     # Load Haar Cascade classifier for face detection
@@ -172,11 +177,11 @@ def main():
             # Extract mouth ROI from grayscale frame
             gray_mouth_roi = gray[mouth_roi_y:mouth_roi_y+mouth_roi_h, mouth_roi_x:mouth_roi_x+mouth_roi_w]
 
-            # Detect mouth state using intensity analysis
-            avg_intensity, is_open_raw = detect_mouth_state(gray_mouth_roi)
+            # Detect mouth state using dark pixel ratio analysis
+            dark_ratio, is_open_raw = detect_mouth_state(gray_mouth_roi)
 
             # Apply temporal smoothing
-            is_mouth_open, smoothed_intensity = smoother.update(is_open_raw, avg_intensity)
+            is_mouth_open, smoothed_ratio = smoother.update(is_open_raw, dark_ratio)
 
             # Calculate mouth center (center of ROI)
             mouthX_px = mouth_roi_x + mouth_roi_w / 2
@@ -246,8 +251,8 @@ def main():
             cv2.putText(frame, f'Mouth: X={mouthX:.2f} Y={mouthY:.2f}', (10, 120),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-            # Display intensity for debugging (lower = darker = more open)
-            cv2.putText(frame, f'Intensity: {smoothed_intensity:.1f}', (10, 150),
+            # Display dark pixel ratio for debugging (higher = more dark pixels = more open)
+            cv2.putText(frame, f'Dark Ratio: {smoothed_ratio:.3f}', (10, 150),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         else:
