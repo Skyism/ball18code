@@ -86,7 +86,12 @@ def main():
                 # Calculate mouth center coordinates (average of landmarks 13 and 14)
                 mouthX_px = (x_13 + x_14) / 2
                 mouthY_px = (y_13 + y_14) / 2
-                print(f'DEBUG: mouthX_px={mouthX_px:.1f}, mouthY_px={mouthY_px:.1f}')
+
+                # Normalize coordinates to [-1, 1] range with screen center at (0, 0)
+                screen_center_x = frame_width / 2
+                screen_center_y = frame_height / 2
+                mouthX = (mouthX_px - screen_center_x) / screen_center_x
+                mouthY = (mouthY_px - screen_center_y) / screen_center_y
 
                 # Calculate Euclidean distance between landmarks 13 and 14
                 distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
