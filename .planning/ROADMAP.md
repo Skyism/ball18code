@@ -98,10 +98,22 @@ Plans:
 **Details:**
 [To be added during planning]
 
+### Phase 8: OpenCV Rewrite
+**Goal**: Replace MediaPipe Face Mesh with OpenCV Haar Cascade classifiers for mouth detection, eliminating external dependencies and improving Raspberry Pi compatibility
+**Depends on**: Phases 1-7 (architectural refactor)
+**Research**: Completed (DISCOVERY.md)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 08-01: Migrate from MediaPipe to OpenCV Haar Cascades
+
+**Details:**
+Complete rewrite of face and mouth detection using OpenCV's built-in Haar Cascade classifiers. Removes MediaPipe dependency to simplify deployment on Raspberry Pi and reduce system complexity. Maintains all existing features: mouth state detection, distance calculation, normalized coordinates, and serial communication.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -112,3 +124,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 5. Describe Distance Face Away From Camera | 1/1 | Complete | 2026-01-11 |
 | 6. Normalized Mouth Center Coordinates | 1/1 | Complete | 2026-01-17 |
 | 7. Arduino Serial Communication | 0/? | Not started | - |
+| 8. OpenCV Rewrite | 0/1 | Not started | - |
