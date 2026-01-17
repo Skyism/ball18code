@@ -18,7 +18,7 @@ CALIBRATION_DISTANCE_INCHES = 12  # Distance used for calibration
 
 # Serial communication constants
 SERIAL_PORT = '/dev/ttyUSB0'  # Default serial port (adjust for your system)
-BAUD_RATE = 9600  # Standard baud rate for Arduino
+BAUD_RATE = 115200  # Standard baud rate for Arduino
 
 def main():
     # Initialize MediaPipe Face Landmarker
@@ -133,9 +133,8 @@ def main():
                 # Send mouth state over serial if connection is active
                 if ser is not None:
                     try:
-                        # Send '1' for OPEN, '0' for CLOSED, followed by newline
-                        state_byte = b'1\n' if mouth_state == "OPEN" else b'0\n'
-                        ser.write(state_byte)
+                        #send format: isMouthOpen:True;dx:5;dy:10\n
+                        ser.write(b'isMouthOpen:' + str(mouth_state) + ';dx:' + str(mouthX) + ';dy:' + str(mouthY) + '\n')
                     except serial.SerialException as e:
                         print(f"Warning: Serial write failed - {e}")
                         print("  Disabling serial output...")

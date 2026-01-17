@@ -68,6 +68,7 @@ None yet.
 
 - Phase 5 added: describe distance the face is away from the camera
 - Phase 6 added: i want to have values mouthx and mouthy to be the center of the mouth relative to the center of the screen (0,0), the range of mouthx and mouthy should be [-1,-1]
+- Phase 7 added: use pyserial to send a message of ismouthopen as a boolean to an arduino
 
 ## Session Continuity
 
