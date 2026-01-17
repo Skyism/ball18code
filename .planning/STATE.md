@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-11)
 
 ## Current Position
 
-Phase: 5 of 5 (Describe Distance Face Away From Camera)
+Phase: 6 of 6 (Normalized Mouth Center Coordinates)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-01-11 — Completed 05-01-PLAN.md
+Last activity: 2026-01-17 — Completed 06-01-PLAN.md
 
 Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 4 min
-- Total execution time: 0.27 hours
+- Total plans completed: 5
+- Average duration: 3 min
+- Total execution time: 0.28 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: ██████████ 100%
 | 02-face-mesh-integration | 1 | 7 min | 7 min |
 | 03-mouth-detection-logic | 1 | 1 min | 1 min |
 | 05-describe-distance-face-away-from-camera | 1 | 1 min | 1 min |
+| 06-normalized-mouth-center-coordinates | 1 | 1 min | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 7, 7, 1, 1 min
+- Last 5 plans: 7, 7, 1, 1, 1 min
 - Trend: Steady (recent phases straightforward implementations building on foundation)
 
 ## Accumulated Context
@@ -52,6 +53,8 @@ Recent decisions affecting current work:
 | 03 | Implement dual visual feedback: text labels + colored landmark circles | Text provides explicit state while colored circles offer immediate visual confirmation |
 | 05 | Use landmarks 234 and 454 for face width measurement | Widest horizontal points of face provide stable metric that inversely correlates with camera distance |
 | 05 | Threshold-based distance indicator: CLOSE > 250px, OK 150-250px, FAR < 150px | Provides qualitative zones for optimal user positioning with typical webcam setup |
+| 06 | Use landmarks 13 and 14 center point for mouth position | Consistent with mouth detection logic, provides stable center reference |
+| 06 | Normalize to [-1, 1] range with screen center at (0, 0) | Intuitive directional control where edges are ±1 and center is origin |
 
 ### Deferred Issues
 
@@ -64,9 +67,10 @@ None yet.
 ### Roadmap Evolution
 
 - Phase 5 added: describe distance the face is away from the camera
+- Phase 6 added: i want to have values mouthx and mouthy to be the center of the mouth relative to the center of the screen (0,0), the range of mouthx and mouthy should be [-1,-1]
 
 ## Session Continuity
 
-Last session: 2026-01-11 22:34
-Stopped at: Completed 05-01-PLAN.md (Phase 5 complete)
+Last session: 2026-01-17 03:21
+Stopped at: Completed 06-01-PLAN.md (Phase 6 complete)
 Resume file: None

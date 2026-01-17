@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Mouth Detection Logic** - Distance calculation and threshold-based state detection (Completed 2026-01-11)
 - [ ] **Phase 4: Raspberry Pi Optimization** - Performance tuning for ARM deployment
 - [x] **Phase 5: Describe Distance Face Away From Camera** - Display face distance from camera for calibration and debugging (Completed 2026-01-11)
+- [x] **Phase 6: Normalized Mouth Center Coordinates** - Calculate mouth center position relative to screen center with normalized range [-1, 1] (Completed 2026-01-17)
 
 ## Phase Details
 
@@ -74,10 +75,20 @@ Plans: (To be determined during phase planning)
 Plans:
 - [x] 05-01: Face width calculation and distance indicator with threshold-based feedback - 1 min
 
+### Phase 6: Normalized Mouth Center Coordinates
+**Goal**: Calculate mouth center position (mouthX, mouthY) relative to screen center (0,0) with normalized range [-1, 1]
+**Depends on**: Phase 3
+**Research**: Unlikely (coordinate transformation and normalization)
+**Status**: Complete
+**Completed**: 2026-01-17
+
+Plans:
+- [x] 06-01: Calculate and display normalized mouth center coordinates - 1 min
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -86,3 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Mouth Detection Logic | 1/1 | Complete | 2026-01-11 |
 | 4. Raspberry Pi Optimization | 0/? | Not started | - |
 | 5. Describe Distance Face Away From Camera | 1/1 | Complete | 2026-01-11 |
+| 6. Normalized Mouth Center Coordinates | 1/1 | Complete | 2026-01-17 |
