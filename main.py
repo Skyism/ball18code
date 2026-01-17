@@ -130,6 +130,17 @@ def main():
                 # Determine mouth state based on threshold
                 mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
 
+                # Send mouth state over serial if connection is active
+                if ser is not None:
+                    try:
+                        # Send '1' for OPEN, '0' for CLOSED, followed by newline
+                        state_byte = b'1\n' if mouth_state == "OPEN" else b'0\n'
+                        ser.write(state_byte)
+                    except serial.SerialException as e:
+                        print(f"Warning: Serial write failed - {e}")
+                        print("  Disabling serial output...")
+                        ser = None
+
                 # Set color based on state: green for CLOSED, red for OPEN
                 state_color = (0, 255, 0) if mouth_state == "CLOSED" else (0, 0, 255)
 
