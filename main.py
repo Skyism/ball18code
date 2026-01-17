@@ -114,6 +114,11 @@ def main():
     # Initialize smoothing filter
     smoother = MouthStateSmoothing()
 
+    # Face detection persistence (to reduce flickering)
+    last_known_face = None
+    frames_without_face = 0
+    FACE_PERSISTENCE_FRAMES = 10  # Keep last face for N frames if not detected
+
     # Main loop - capture and display frames
     while True:
         # Read frame from webcam
@@ -130,10 +135,24 @@ def main():
         # Convert to grayscale for Haar Cascade detection
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # Detect faces
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        # Detect faces with more lenient parameters to reduce flickering
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(50, 50))
 
-        # Process first detected face
+        # Face persistence logic
+        if len(faces) > 0:
+            # Face detected - update last known position
+            last_known_face = faces[0]
+            frames_without_face = 0
+        elif last_known_face is not None and frames_without_face < FACE_PERSISTENCE_FRAMES:
+            # No face detected, but use last known position temporarily
+            faces = [last_known_face]
+            frames_without_face += 1
+        else:
+            # No face for too long, clear last known
+            last_known_face = None
+            frames_without_face = 0
+
+        # Process first detected face (either current or persisted)
         if len(faces) > 0:
             # Get the first face
             (x, y, w, h) = faces[0]
