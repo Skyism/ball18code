@@ -11,7 +11,7 @@ from collections import deque
 
 # Mouth detection parameters
 DARK_PIXEL_THRESHOLD = 70  # Pixels darker than this are considered "dark"
-DARK_PIXEL_RATIO_THRESHOLD = 0.15  # Ratio of dark pixels indicating open mouth
+DARK_PIXEL_RATIO_THRESHOLD = 0.03  # Ratio of dark pixels indicating open mouth
 SMOOTHING_WINDOW = 5  # Number of frames to average for stability
 
 # Distance calculation constants (calibrated values)
