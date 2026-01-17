@@ -10,6 +10,11 @@ import numpy as np
 # Mouth open threshold in pixels
 MOUTH_OPEN_THRESHOLD = 20
 
+# Distance calculation constants (calibrated values)
+KNOWN_FACE_WIDTH_CM = 12  # Average face width in cm
+FOCAL_LENGTH_PX = 673  # Focal length in pixels (calibrated at 12 inches)
+CALIBRATION_DISTANCE_INCHES = 12  # Distance used for calibration
+
 def main():
     # Initialize MediaPipe Face Landmarker
     base_options = mp.tasks.BaseOptions(model_asset_path='face_landmarker.task')
@@ -78,6 +83,11 @@ def main():
                 x_14 = int(landmark_14.x * frame_width)
                 y_14 = int(landmark_14.y * frame_height)
 
+                # Calculate mouth center coordinates (average of landmarks 13 and 14)
+                mouthX_px = (x_13 + x_14) / 2
+                mouthY_px = (y_13 + y_14) / 2
+                print(f'DEBUG: mouthX_px={mouthX_px:.1f}, mouthY_px={mouthY_px:.1f}')
+
                 # Calculate Euclidean distance between landmarks 13 and 14
                 distance = np.sqrt((x_14 - x_13)**2 + (y_14 - y_13)**2)
 
@@ -112,20 +122,28 @@ def main():
                 cv2.putText(frame, f'Face Width: {face_width_px:.0f} px', (10, 90),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                # Determine distance indicator based on face width thresholds
-                if face_width_px > 250:
-                    distance_indicator = "CLOSE"
-                    distance_color = (0, 0, 255)  # Red for suboptimal
-                elif face_width_px >= 150:
-                    distance_indicator = "OK"
-                    distance_color = (0, 255, 0)  # Green for optimal
+                # Calculate actual distance from camera using pinhole camera model
+                # Formula: distance = (known_width × focal_length) / perceived_width
+                if face_width_px > 0:  # Avoid division by zero
+                    distance_inches = (FOCAL_LENGTH_PX * CALIBRATION_DISTANCE_INCHES) / face_width_px
+                    
+                    # Determine distance indicator based on calculated distance
+                    if distance_inches < 10:
+                        distance_indicator = "TOO CLOSE"
+                        distance_color = (0, 0, 255)  # Red
+                    elif distance_inches <= 15:
+                        distance_indicator = "OPTIMAL"
+                        distance_color = (0, 255, 0)  # Green
+                    else:
+                        distance_indicator = "TOO FAR"
+                        distance_color = (0, 165, 255)  # Orange
+                    
+                    # Display calculated distance in inches
+                    cv2.putText(frame, f'Distance: {distance_inches:.1f} inches ({distance_indicator})', 
+                               (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
                 else:
-                    distance_indicator = "FAR"
-                    distance_color = (0, 0, 255)  # Red for suboptimal
-
-                # Display distance indicator with color coding
-                cv2.putText(frame, f'Distance: {distance_indicator}', (10, 120),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, distance_color, 2)
+                    cv2.putText(frame, 'Distance: N/A', (10, 120),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                 # Draw circles at landmark positions with state color
                 cv2.circle(frame, (x_13, y_13), 5, state_color, -1)
