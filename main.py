@@ -10,7 +10,7 @@ import serial
 from collections import deque
 
 # Mouth detection parameters
-MOUTH_OPEN_INTENSITY_THRESHOLD = 80  # Average intensity threshold (darker = more open)
+MOUTH_OPEN_INTENSITY_THRESHOLD = 120  # Average intensity threshold (darker = more open)
 SMOOTHING_WINDOW = 5  # Number of frames to average for stability
 
 # Distance calculation constants (calibrated values)
