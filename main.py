@@ -144,6 +144,13 @@ def main():
                         print("  Disabling serial output...")
                         ser = None
 
+                if ser is not None and ser.in_waiting > 0:
+                    try:
+                        arduino_msg = ser.readline().decode('utf-8').strip()
+                        print(f"[ARDUINO]: {arduino_msg}")
+                    except Exception as e:
+                        print(f"Error reading Arduino: {e}")
+
                 # Set color based on state: green for CLOSED, red for OPEN
                 state_color = (0, 255, 0) if mouth_state == "CLOSED" else (0, 0, 255)
 
