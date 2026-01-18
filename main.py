@@ -145,13 +145,6 @@ def main():
                         print("  Disabling serial output...")
                         ser = None
 
-                if ser is not None and ser.in_waiting > 0:
-                    try:
-                        arduino_msg = ser.readline().decode('utf-8').strip()
-                        print(f"[ARDUINO]: {arduino_msg}")
-                    except Exception as e:
-                        print(f"Error reading Arduino: {e}")
-
                 # Set color based on state: green for CLOSED, red for OPEN
                 state_color = (0, 255, 0) if mouth_state == "CLOSED" else (0, 0, 255)
 
@@ -201,6 +194,29 @@ def main():
                 # Add labels next to landmarks
                 cv2.putText(frame, '13', (x_13 + 10, y_13), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
                 cv2.putText(frame, '14', (x_14 + 10, y_14), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            else:
+                # No face detected - send default values
+                message = 'isMouthOpen:FALSE;dx:0;dy:0\n'
+                
+                # Send default state over serial if connection is active
+                if ser is not None:
+                    try:
+                        ser.write(message.encode('utf-8'))
+                    except serial.SerialException as e:
+                        print(f"Warning: Serial write failed - {e}")
+                        print("  Disabling serial output...")
+                        ser = None
+                
+                # Display "No face detected" message on frame
+                cv2.putText(frame, 'No face detected', (10, 30),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
+
+            if ser is not None and ser.in_waiting > 0:
+                try:
+                    arduino_msg = ser.readline().decode('utf-8').strip()
+                    print(f"[ARDUINO]: {arduino_msg}")
+                except Exception as e:
+                    print(f"Error reading Arduino: {e}")
 
             # Display the frame in a window
             cv2.imshow('Mouth Detection', frame)
