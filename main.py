@@ -129,12 +129,16 @@ def main():
 
                 # Determine mouth state based on threshold
                 mouth_state = "OPEN" if distance > MOUTH_OPEN_THRESHOLD else "CLOSED"
+                ismouthopen = "TRUE" if mouth_state == "OPEN" else "FALSE"
+
+                message = f'isMouthOpen:{ismouthopen};dx:{mouthX};dy:{mouthY}\n'
+                print(message)
 
                 # Send mouth state over serial if connection is active
                 if ser is not None:
                     try:
                         #send format: isMouthOpen:True;dx:5;dy:10\n
-                        ser.write(b'isMouthOpen:' + str(mouth_state) + ';dx:' + str(mouthX) + ';dy:' + str(mouthY) + '\n')
+                        ser.write(message.encode('utf-8'))
                     except serial.SerialException as e:
                         print(f"Warning: Serial write failed - {e}")
                         print("  Disabling serial output...")
