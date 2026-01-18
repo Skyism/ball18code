@@ -7,6 +7,9 @@ const int ESC_PIN = 9; // change
 const int MIN_US = 1000; // typical
 const int MAX_US = 2000; // typical
 
+const int MIN_THROTTLE = 1000; // ESC stopped
+const int RUN_THROTTLE = 1500; // ESC running (adjust for your flywheel)
+
 // PINS (edit based on wiring)
 const byte step_pin_y = 3;
 const byte dir_pin_y = 2;
@@ -135,12 +138,11 @@ void loop() {
 
   if (tiltTarget == 0 && panTarget == 0 && isMouthOpen) {
     esc.writeMicroseconds(RUN_THROTTLE); // run flywheel
-    else {
-      esc.writeMicroseconds(MIN_THROTTLE); // stop flywheel
-    }
-
-    delay(20); // ~50 Hz update, fine for ESC
+  } else {
+    esc.writeMicroseconds(MIN_THROTTLE); // stop flywheel
   }
+
+  delay(20); // ~50 Hz update, fine for ESC
 }
 
 double deadband(double val, double min, double max) {
