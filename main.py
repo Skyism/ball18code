@@ -18,6 +18,7 @@ CALIBRATION_DISTANCE_INCHES = 12  # Distance used for calibration
 
 # Serial communication constants
 SERIAL_PORT = '/dev/ttyUSB0'  # Default serial port (adjust for your system)
+# SERIAL_PORT = '/dev/ttys060'
 BAUD_RATE = 115200  # Standard baud rate for Arduino
 
 def main():
@@ -132,7 +133,7 @@ def main():
                 ismouthopen = "TRUE" if mouth_state == "OPEN" else "FALSE"
 
                 message = f'isMouthOpen:{ismouthopen};dx:{mouthX};dy:{mouthY}\n'
-                print(message)
+                # print(message)
 
                 # Send mouth state over serial if connection is active
                 if ser is not None:
